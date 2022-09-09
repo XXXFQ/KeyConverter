@@ -35,7 +35,7 @@ class Application(tk.Frame):
                 line = 0
                 Column = i
             keys[i] = tk.Label(tab[0], text=self.keysList(line, Column))
-            self.check_value[i] = tk.BooleanVar()
+            self.check_value[i] = tk.BooleanVar() #True or False
             self.chk[i] = tk.Checkbutton(tab[0], variable = self.check_value[i], command = self.KeyConversion)
         #A
         self.chk[0]["text"] = "A"
@@ -144,26 +144,28 @@ class Application(tk.Frame):
     
     # キーリスト
     def keysList(self, line, Column):
-        keysList = [["A","B","Select","Start","DPad→","DPad←","DPad↑","DPad↓","R","L","X","Y"],
-                    ["ZL","ZR","Touch Screen","CS→","CS←","CS↑","CS↓","CPad→","CPad←","CPad↑","CPad↓"]]
+        keysList = [
+            ["A","B","Select","Start","DPad→","DPad←","DPad↑","DPad↓","R","L","X","Y"],
+            ["ZL","ZR","Touch Screen","CS→","CS←","CS↑","CS↓","CPad→","CPad←","CPad↑","CPad↓"]
+        ]
         return keysList[line][Column]
     
-    # キーコード変換
+    # キーコード変換処理
     def KeyConversion(self):
-        self.keycode = 0
+        keyvalue = 0
         for i in range(23):
             if self.check_value[i].get():
-                if i < 12:
-                    self.keycode += (1<<i)
-                elif i >= 12 and i < 14: #keyが"ZR"か"ZR"だった場合の処理
-                    self.keycode += 2**(i+2)
+                if i <= 11:
+                    keyvalue += 1 << i
+                elif i >= 12 and i <= 13: #keyが"ZL"か"ZR"だった場合の処理
+                    keyvalue += 1 << (i + 2)
                 elif i == 14: #keyが"Touch Screen"だった場合の処理
-                    self.keycode += 2**(i+6)
+                    keyvalue += 1 << (i + 6)
                 else: #keyが"Touch Screen"以上だった場合の処理
-                    self.keycode += 2**(i+9)
-        self.keycode = format(self.keycode, "X").zfill(8)
+                    keyvalue += 1 << (i + 9)
+        keyvalue = format(keyvalue, "X").zfill(8)
         self.Keycode_box1 = ttk.Entry(tab[0], width = 20, justify = tk.CENTER)
-        self.Keycode_box1.insert(tk.END, "DD000000 " + f"{self.keycode}")
+        self.Keycode_box1.insert(tk.END, "DD000000 " + f"{keyvalue}")
         self.Keycode_box1["state"] = "readonly"
         self.Keycode_box1.place(x=76, y=18)
 
@@ -218,55 +220,47 @@ class Application(tk.Frame):
     # キーコード逆変換
     def ReverseKeyConversion(self):
         self.message['text'] = ""
-        text = self.Keycode_box2.get()
-        if not text:
+        key_text = self.Keycode_box2.get()
+        if not key_text:
             messagebox.showerror("エラー!", "キーコードを入力して下さい。")
         else:
-            text = text.replace("DD000000 " , "")
+            key_text = key_text.replace("DD000000 " , "")
             try:
-                text = int(text , 16)
+                key_text = int(key_text , 16)
             except ValueError:
                 messagebox.showerror("エラー!", "無効な値です。")
             for i in range(12):
-                if text & 1:
+                if key_text & 1:
                     if not self.message['text']:
                         self.message['text'] += self.keysList(0, i)
                     else:
                         self.message['text'] += f"+{self.keysList(0, i)}"
-                text >>= 1
-            if text:
-                text >>= 2
+                key_text >>= 1
+            if key_text:
+                key_text >>= 2
                 for i in range(11):
-                    if text & 1:
+                    if key_text & 1:
                         if not self.message['text']:
                             self.message['text'] += self.keysList(1, i)
                         else:
                             self.message['text'] += f"+{self.keysList(1, i)}"
                     if i == 1: #iが(ZR)だった場合の処理
-                        text >>= 5
+                        key_text >>= 5
                     elif i == 2: #iが(Touch Screen)だった場合の処理
-                        text >>= 4
+                        key_text >>= 4
                     else:
-                        text >>= 1
+                        key_text >>= 1
     #----------------------------------説明---------------------------------
     def create_widgets_about(self):
         # フッター
         footer = tk.Label(text="© 2022 静")
         footer.place(x=120, y=275)
-
+        
         # 説明
-        about = tk.Label(tab[2], text="用語説明:")
+        texts = "用語説明:\n・DPad = 十字キー\n・CPad = スライドパッド\n・CS = Cスティック\n"
+        texts += "\nキーコード変換ツール V1.0.1\n静<Twitter:@jitsuzo>"
+        about = tk.Label(tab[2], text=texts, justify="left", font=("MSゴシック", "12", "bold"))
         about.place(x=0, y=5)
-        about = tk.Label(tab[2], text="DPad = 十字キー")
-        about.place(x=10, y=25)
-        about = tk.Label(tab[2], text="CPad = スライドパッド")
-        about.place(x=10, y=45)
-        about = tk.Label(tab[2], text="CS = Cスティック")
-        about.place(x=10, y=65)
-        about = tk.Label(tab[2], text="キーコード変換ツール / Key Converter V1.0.0")
-        about.place(x=0, y=105)
-        about = tk.Label(tab[2], text="静<Twitter:@jitsuzo>")
-        about.place(x=10, y=125)
 
 #アイコンパス設定
 def temp_path(relative_path):
@@ -278,7 +272,7 @@ def temp_path(relative_path):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.title('Key Converter v1.0.0')
+    root.title('Key Converter v1.0.1')
     root.geometry('300x310')
     root.resizable(width=False, height=False)
 
